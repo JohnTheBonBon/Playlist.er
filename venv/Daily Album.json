@@ -1,0 +1,23 @@
+{
+    "Album of the Day JSON file": {
+        "Last updated": "14-08-2024",
+        "Current album": "After Laughter - Paramore",
+        "Playlist name": "After Laughter"
+    },
+    "Albums used": [
+        "FOREVER - Flight Facilities",
+        "Let's Cheers To This - Sleeping With Sirens",
+        "Evanescence - Evanescence",
+        "This Is Why - Paramore",
+        "Paramore - Paramore",
+        "The Final Riot! - Paramore",
+        "After Laughter - Paramore"
+    ],
+    "Config": {
+        "Playlist name": "YAY",
+        "Use album for playlist name": true,
+        "Minimum album tracks": 5,
+        "Cycle albums": true,
+        "Limit one album per day": false
+    }
+}
