@@ -1,79 +1,72 @@
 import subprocess
-import plistlib
+import plistlib  # Parse apple typed XML files
 import logging
 import os
 
-# music-library-exporter export --music_media_dir "/Users/aidanosullivan/Music/Music/Media" --output_path "/Users/aidanosullivan/Music/Music/GeneratedLibrary.xml"
-#media_dir = os.path.join(home_dir, 'Music/Music/Media.localised/Music')
 
-class Manager:
+class XmlManager:
     def __init__(self):
-        self.home_dir = os.path.expanduser('~')
-        self.music_dir = os.path.join(self.home_dir, 'Music/Music')
-        self.xml_file = os.path.join(self.home_dir, 'Music/Music/Playlister.xml')
-        self.music_xml_exporter = (
+        self.home_dir: str = os.path.expanduser('~')
+        self.music_dir: str = os.path.join(self.home_dir, 'Music/Music')
+        self.xml_file: str = os.path.join(self.home_dir, 'Music/Music/Playlister.xml')
+        self.music_xml_exporter: str = (
             f'music-library-exporter export --music_media_dir "{self.music_dir}"'
             f' --output_path "{self.music_dir}"/Playlister.xml'
         )
 
-    def update_xml_file(self):
-        # Remove old XML file
+    def refresh_file(self) -> None:
+        """Delete XML file"""
         if os.path.exists(self.xml_file):
             os.remove(self.xml_file)
         else:
-            logging.info('Creating new XML file... 📄')
+            logging.info('Creating brand new XML file... 📄')
 
-        # Generate new XML file
+        self.create_file()
+
+    def create_file(self) -> None:
+        """Create new XML file"""
         try:
             subprocess.run(
                 self.music_xml_exporter,
-                shell=True,
-                stdout=subprocess.DEVNULL # Hide output
+                shell=True,  # Run command in shell (Higher permissions)
+                check=True,  # Raise exception if error
+                stdout=subprocess.DEVNULL,  # Hide output
+                stderr=subprocess.PIPE  # Capture errors
             )
-        except Exception as e:
-            logging.error(f'Issue running music-library-exporter: {e}')
+            logging.info('Refreshed XML file 🔄')
+        except subprocess.CalledProcessError as error:
+            logging.error(f'Issue running music-library-exporter: {error.stderr.decode()}')
+            raise
 
-    def load_xml(self):
-        #replace_xml()
+    def load(self) -> dict:
+        """Load XMl file for parsing data with plistlib (Apple XML format)"""
         try:
-            with open(self.xml_file, 'rb') as f:
-                return plistlib.load(f)
-        except FileNotFoundError:
-            logging.error("No '.xml' file found ❌")
-            exit()
+            with open(self.xml_file, 'rb') as xml_file:
+                return plistlib.load(xml_file)
+        except plistlib.InvalidFileException as error:
+            logging.error(f"Error loading XML file: {error}")
+            raise
 
 
-class Extract:
-    def __init__(self):
-        self.album_tracks = {}
-        self.xml_file = Manager
+class XmlExtract:
+    def __init__(self, xml_manager: XmlManager):
+        self.xml_load: dict = xml_manager.load()
 
-    def get_track(self):
-        # Extract tracks with album & artist from xml
-        for track_id, track in self.xml_file['Tracks'].items():
-            album = track.get('Album')
-            artist = track.get('Artist')
+    def album_tracks_with_artists(self) -> dict:
+        """Extract album tracks with artists from XML file"""
+        album_tracks: dict = {}
+
+        for track_id, track in self.xml_load['Tracks'].items():
+            album: str = track.get('Album')
+            artist: str = track.get('Artist')
 
             # Ensure the track has both an album and an artist
             if album and artist:
-                album_and_artist = (album, artist)
+                album_and_artist: tuple = (album, artist)
 
-                # Count tracks in all albums //
-                if album_and_artist not in self.album_tracks:
-                    self.album_tracks[album_and_artist] = 0
-                self.album_tracks[album_and_artist] += 1
+                # Count the number of tracks for each album
+                if album_and_artist not in album_tracks:
+                    album_tracks[album_and_artist] = 0
+                album_tracks[album_and_artist] += 1
 
-
-
-if __name__ == '__main__':
-    # Initialize classes
-    mgr = Manager()
-    ext = Extract()
-
-    # Manager
-    mgr.update_xml_file()
-    xml_content = mgr.load_xml()
-
-    # Extract
-    ext.xml_file = xml_content
-    ext.get_track()
+        return album_tracks
