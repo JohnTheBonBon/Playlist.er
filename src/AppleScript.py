@@ -58,3 +58,15 @@ class AppleScripts:
         '''
         run_applescript(script)
         logging.info("DELETED OLD PLAYLIST:\n      🗑️ '%s'", self.json_playlist_name)
+
+    def rename_playlist(self):
+        script: str = f'''
+        tell application "Music"
+            if exists (some playlist whose name is "{self.json_playlist_name}") then
+                set the name of (some playlist whose name is "{self.json_playlist_name}") to "{self.new_playlist_name}"
+            end if
+        end tell
+        '''
+        run_applescript(script)
+        logging.info("RENAMED PLAYLIST:\n       ℹ️ '%s' to '%s'", self.json_playlist_name,
+                     self.new_playlist_name)
